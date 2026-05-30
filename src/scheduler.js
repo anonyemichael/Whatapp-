@@ -2,6 +2,7 @@
 
 const cron = require('node-cron');
 const fs = require('fs-extra');
+const mime = require('mime-types');
 const config = require('./config');
 const logger = require('./logger');
 
@@ -20,18 +21,53 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * Build a Baileys message payload from config media paths + caption text.
+ * Priority: video > image > text
+ */
+function buildPayload(cfg, text) {
+    if (cfg.videoPath && fs.existsSync(cfg.videoPath)) {
+        return {
+            video: fs.readFileSync(cfg.videoPath),
+            caption: cfg.mediaCaption || text,
+            mimetype: mime.lookup(cfg.videoPath) || 'video/mp4',
+            gifPlayback: false,
+        };
+    }
+    if (cfg.imagePath && fs.existsSync(cfg.imagePath)) {
+        return {
+            image: fs.readFileSync(cfg.imagePath),
+            caption: cfg.mediaCaption || text,
+            mimetype: mime.lookup(cfg.imagePath) || 'image/jpeg',
+        };
+    }
+    return { text };
+}
+
 // ─── STATUS UPDATE ────────────────────────────────────────────────────────────
 async function postStatus() {
     const cfg = config.statusUpdate;
     if (!cfg.enabled || !cfg.messages.length) return;
+
     const ref = { value: _statusIndex };
     const text = pickNext(cfg.messages, ref);
     _statusIndex = ref.value;
+
     try {
-        await _sock.updateProfileStatus(text);
-        logger.log(`Status updated: ${text.slice(0, 60)}`);
+        // Post as WhatsApp status/story (visible to all contacts)
+        const payload = buildPayload(cfg, text);
+        await _sock.sendMessage('status@broadcast', payload, {
+            statusJidList: [], // empty = all contacts who can see status
+        });
+        logger.log(`Status posted: ${text.slice(0, 60)}`);
     } catch (err) {
-        logger.error('postStatus', err);
+        // Fallback: update profile bio text
+        try {
+            await _sock.updateProfileStatus(text);
+            logger.log(`Profile status updated (story fallback): ${text.slice(0, 60)}`);
+        } catch (e) {
+            logger.error('postStatus', e);
+        }
     }
 }
 
@@ -39,9 +75,12 @@ async function postStatus() {
 async function groupBroadcast() {
     const cfg = config.groupBroadcast;
     if (!cfg.enabled || !cfg.messages.length) return;
+
     const ref = { value: _groupMsgIndex };
     const text = pickNext(cfg.messages, ref);
     _groupMsgIndex = ref.value;
+
+    const payload = buildPayload(cfg, text);
 
     try {
         const groups = await getTargetGroups(cfg.targetGroups);
@@ -49,14 +88,8 @@ async function groupBroadcast() {
 
         for (const jid of groups) {
             try {
-                const payload = { text };
-                if (cfg.imagePath && fs.existsSync(cfg.imagePath)) {
-                    const image = fs.readFileSync(cfg.imagePath);
-                    await _sock.sendMessage(jid, { image, caption: text });
-                } else {
-                    await _sock.sendMessage(jid, payload);
-                }
-                logger.log(`  → Sent to group ${jid}`);
+                await _sock.sendMessage(jid, payload);
+                logger.log(`  → Sent to ${jid}`);
             } catch (e) {
                 logger.error(`  → Failed for ${jid}`, e);
             }
@@ -71,6 +104,7 @@ async function groupBroadcast() {
 async function dmCampaign() {
     const cfg = config.dmCampaign;
     if (!cfg.enabled || !cfg.contacts.length || !cfg.messages.length) return;
+
     const ref = { value: _dmMsgIndex };
     const template = pickNext(cfg.messages, ref);
     _dmMsgIndex = ref.value;
@@ -80,8 +114,9 @@ async function dmCampaign() {
     for (const number of cfg.contacts) {
         const jid = `${number}@s.whatsapp.net`;
         const text = template.replace('{name}', `+${number}`);
+        const payload = buildPayload(cfg, text);
         try {
-            await _sock.sendMessage(jid, { text });
+            await _sock.sendMessage(jid, payload);
             logger.log(`  → DM sent to ${number}`);
         } catch (e) {
             logger.error(`  → DM failed for ${number}`, e);
@@ -118,4 +153,4 @@ function init(sock) {
     }
 }
 
-module.exports = { init, postStatus, groupBroadcast, dmCampaign };
+module.exports = { init, postStatus, groupBroadcast, dmCampaign, buildPayload };

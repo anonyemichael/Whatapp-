@@ -7,17 +7,13 @@
 module.exports = {
 
     // ─── OWNER / ADMIN ────────────────────────────────────────────────────────
-    // Your WhatsApp number in international format WITHOUT '+' or spaces.
-    // e.g. "2348012345678"  (Nigeria) or "12025550199" (US)
     ownerNumber: process.env.OWNER_NUMBER || '233533311532',
-
-    // Numbers that can use admin bot commands (include ownerNumber)
     adminNumbers: (process.env.ADMIN_NUMBERS || '233533311532').split(','),
 
     // ─── AUTO-REPLY ───────────────────────────────────────────────────────────
     autoReply: {
         enabled: true,
-        // keyword → reply text (case-insensitive matching)
+        dmOnly: true,
         rules: [
             { keyword: 'hi',        reply: 'Hello! 👋 How can I help you today?' },
             { keyword: 'hello',     reply: 'Hi there! 😊 Welcome!' },
@@ -27,17 +23,12 @@ module.exports = {
             { keyword: 'location',  reply: '📍 We are located at [your address]. DM for directions!' },
             { keyword: 'contact',   reply: '📞 Reach us at [phone/email]. We reply within 1 hour.' },
         ],
-        // Only auto-reply in DMs (false = also reply in groups)
-        dmOnly: true,
     },
 
     // ─── STATUS / STORY AUTO-UPDATE ───────────────────────────────────────────
     statusUpdate: {
         enabled: true,
-        // cron expression: "minute hour day month weekday"
-        // Default: every day at 08:00 AM
         schedule: '0 8 * * *',
-        // Messages rotate through this list
         messages: [
             '🚀 Good morning! Check out our latest deals today!',
             '💥 Flash Sale! Limited time offers – DM us now!',
@@ -45,56 +36,54 @@ module.exports = {
             '🎁 Special offer just for you! Reply "DEAL" to learn more.',
             '📦 Fast delivery guaranteed! Place your order now.',
         ],
-        // Optional: path to an image file to post as status (leave blank for text-only)
-        imagePath: '',
+        // Media to post as status — set ONE of these (video takes priority over image)
+        // Leave both blank for text-only status
+        imagePath: '',   // e.g. './media/banner.jpg'
+        videoPath: '',   // e.g. './media/promo.mp4'  (max ~16 MB recommended)
+        // Caption shown on image/video status (leave blank to use rotating messages above)
+        mediaCaption: '',
     },
 
     // ─── GROUP BROADCAST ──────────────────────────────────────────────────────
     groupBroadcast: {
         enabled: true,
-        // cron expression – default: every day at 10:00 AM
         schedule: '0 10 * * *',
-        // List of group names to target (partial match, case-insensitive).
-        // Leave empty [] to broadcast to ALL groups.
+        // Partial group name matches (case-insensitive). Empty [] = all groups.
         targetGroups: [],
-        // Messages rotate through this list
         messages: [
             '📢 *ANNOUNCEMENT* 📢\n\nHello everyone! We have exciting offers today. Reply to this message or DM us for more info!\n\n#Marketing #Deals',
             '🔥 *HOT DEAL ALERT* 🔥\n\nLimited stock available! Get yours before it runs out.\n\nContact us now 👇',
             '🎉 *SPECIAL PROMOTION* 🎉\n\nExclusive discount for group members only!\nValid today only – don\'t miss out!',
         ],
-        // Delay between each group message (milliseconds) – avoid spam detection
         delayMs: 3000,
-        // Optional: path to an image to attach to group messages
-        imagePath: '',
+        // Attach media to group messages — video takes priority over image
+        imagePath: '',   // e.g. './media/promo.jpg'
+        videoPath: '',   // e.g. './media/promo.mp4'
     },
 
     // ─── DM CAMPAIGN ─────────────────────────────────────────────────────────
     dmCampaign: {
         enabled: false,
-        // cron expression – default: every Monday at 9:00 AM
         schedule: '0 9 * * 1',
-        // Target phone numbers (international, no '+')
         contacts: [
-            // '2348012345678',
-            // '2348087654321',
+            // '233201234567',
         ],
         messages: [
             'Hi {name}! 👋 We have a special offer just for you. Reply for details!',
             'Hello {name}! Exclusive deal available today only. Interested?',
         ],
-        // Delay between each DM (ms)
         delayMs: 5000,
+        // Attach media to DMs — video takes priority over image
+        imagePath: '',
+        videoPath: '',
     },
 
     // ─── WELCOME MESSAGE ──────────────────────────────────────────────────────
     welcomeMessage: {
         enabled: true,
-        // {name} is replaced with the new member's display name
         text: 'Welcome to the group, *{name}*! 🎉\n\nWe\'re glad you\'re here. Feel free to ask us anything!',
     },
 
     // ─── COMMAND PREFIX ──────────────────────────────────────────────────────
-    // Admin commands are triggered by this prefix (e.g. !blast, !status)
     commandPrefix: '!',
 };
