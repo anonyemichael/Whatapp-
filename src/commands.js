@@ -1,20 +1,46 @@
 'use strict';
 
-const { MessageMedia } = require('whatsapp-web.js');
-const fs = require('fs-extra');
 const config = require('./config');
 const scheduler = require('./scheduler');
 const logger = require('./logger');
 
 const prefix = config.commandPrefix;
 
-function isAdmin(msg) {
-    const from = msg.from.replace('@c.us', '').replace('@s.whatsapp.net', '');
-    return config.adminNumbers.includes(from) || config.ownerNumber === from;
+function getSender(msg) {
+    return (msg.key.participant || msg.key.remoteJid || '').split('@')[0];
 }
 
-async function handle(client, msg) {
-    const body = msg.body ? msg.body.trim() : '';
+function isAdmin(msg) {
+    const sender = getSender(msg);
+    return config.adminNumbers.includes(sender) || config.ownerNumber === sender;
+}
+
+function getBody(msg) {
+    return (
+        msg.message?.conversation ||
+        msg.message?.extendedTextMessage?.text ||
+        msg.message?.imageMessage?.caption ||
+        ''
+    ).trim();
+}
+
+function isGroup(msg) {
+    return msg.key.remoteJid?.endsWith('@g.us');
+}
+
+function delay(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+async function sendReply(sock, msg, text) {
+    await sock.sendMessage(msg.key.remoteJid, { text }, { quoted: msg });
+}
+
+async function handle(sock, msg) {
+    if (msg.key.fromMe) return;
+
+    const body = getBody(msg);
+    if (!body) return;
 
     // ─── ADMIN COMMANDS ───────────────────────────────────────────────────────
     if (body.startsWith(prefix) && isAdmin(msg)) {
@@ -24,135 +50,108 @@ async function handle(client, msg) {
 
         switch (cmd) {
             case 'blast': {
-                // !blast <message>  – immediately blast to all/configured groups
-                if (!rest) {
-                    await msg.reply('Usage: !blast <your message>');
-                    return;
-                }
-                const chats = await client.getChats();
-                const groups = chats.filter(c => {
-                    if (!c.isGroup) return false;
-                    if (!config.groupBroadcast.targetGroups.length) return true;
-                    return config.groupBroadcast.targetGroups.some(n =>
-                        c.name.toLowerCase().includes(n.toLowerCase())
-                    );
-                });
-                await msg.reply(`Blasting to ${groups.length} group(s)…`);
-                for (const g of groups) {
-                    try { await g.sendMessage(rest); } catch (e) { /* skip */ }
+                if (!rest) { await sendReply(sock, msg, 'Usage: !blast <message>'); return; }
+                const groups = await getGroups(sock);
+                await sendReply(sock, msg, `Blasting to ${groups.length} group(s)…`);
+                for (const jid of groups) {
+                    try { await sock.sendMessage(jid, { text: rest }); } catch (e) { /* skip */ }
                     await delay(config.groupBroadcast.delayMs);
                 }
-                await msg.reply(`Done! Message sent to ${groups.length} group(s).`);
-                logger.log(`Manual blast by admin: "${rest.slice(0, 60)}"`);
+                await sendReply(sock, msg, `Done! Sent to ${groups.length} group(s).`);
+                logger.log(`Manual blast: "${rest.slice(0, 60)}"`);
                 break;
             }
 
             case 'dm': {
-                // !dm <number> <message>
-                const [num, ...msgParts] = rest.split(' ');
-                if (!num || !msgParts.length) {
-                    await msg.reply('Usage: !dm <number> <message>\nExample: !dm 2348012345678 Hello!');
+                const [num, ...parts] = rest.split(' ');
+                if (!num || !parts.length) {
+                    await sendReply(sock, msg, 'Usage: !dm <number> <message>\nExample: !dm 233201234567 Hello!');
                     return;
                 }
-                const chatId = `${num}@c.us`;
-                await client.sendMessage(chatId, msgParts.join(' '));
-                await msg.reply(`DM sent to ${num}`);
+                await sock.sendMessage(`${num}@s.whatsapp.net`, { text: parts.join(' ') });
+                await sendReply(sock, msg, `DM sent to ${num}`);
                 logger.log(`Admin DM to ${num}`);
                 break;
             }
 
             case 'status': {
-                // !status <message>  – update your WhatsApp status now
-                if (!rest) {
-                    await msg.reply('Usage: !status <text>');
-                    return;
-                }
-                await client.setStatus(rest);
-                await msg.reply('Status updated!');
-                logger.log(`Status updated via command: "${rest.slice(0, 60)}"`);
+                if (!rest) { await sendReply(sock, msg, 'Usage: !status <text>'); return; }
+                await sock.updateProfileStatus(rest);
+                await sendReply(sock, msg, 'Status updated!');
+                logger.log(`Status updated: "${rest.slice(0, 60)}"`);
                 break;
             }
 
             case 'statusnow': {
-                // !statusnow  – trigger the scheduled status update immediately
                 await scheduler.postStatus();
-                await msg.reply('Status updated with next scheduled message!');
+                await sendReply(sock, msg, 'Scheduled status posted!');
                 break;
             }
 
             case 'blastnow': {
-                // !blastnow  – trigger scheduled group broadcast immediately
-                await msg.reply('Running group broadcast now…');
+                await sendReply(sock, msg, 'Running group broadcast…');
                 await scheduler.groupBroadcast();
-                await msg.reply('Group broadcast complete!');
+                await sendReply(sock, msg, 'Group broadcast complete!');
                 break;
             }
 
             case 'dmnow': {
-                // !dmnow  – trigger DM campaign immediately
-                await msg.reply('Running DM campaign now…');
+                await sendReply(sock, msg, 'Running DM campaign…');
                 await scheduler.dmCampaign();
-                await msg.reply('DM campaign complete!');
+                await sendReply(sock, msg, 'DM campaign complete!');
                 break;
             }
 
             case 'groups': {
-                // !groups  – list all groups the bot is in
-                const chats = await client.getChats();
-                const groups = chats.filter(c => c.isGroup);
-                const list = groups.map((g, i) => `${i + 1}. ${g.name}`).join('\n');
-                await msg.reply(`*Groups (${groups.length}):*\n${list || 'None'}`);
-                break;
-            }
-
-            case 'contacts': {
-                // !contacts  – count contacts
-                const contacts = await client.getContacts();
-                const personal = contacts.filter(c => c.isMyContact && !c.isGroup);
-                await msg.reply(`You have ${personal.length} saved contacts.`);
+                const groups = await sock.groupFetchAllParticipating();
+                const list = Object.values(groups).map((g, i) => `${i + 1}. ${g.subject}`).join('\n');
+                await sendReply(sock, msg, `*Groups (${Object.keys(groups).length}):*\n${list || 'None'}`);
                 break;
             }
 
             case 'help': {
-                await msg.reply(
-                    `*WhatsApp Marketing Bot – Admin Commands*\n\n` +
-                    `${prefix}blast <msg>        – Blast message to all groups\n` +
-                    `${prefix}blastnow            – Run scheduled broadcast now\n` +
-                    `${prefix}dm <num> <msg>      – Send a DM to a number\n` +
-                    `${prefix}dmnow               – Run DM campaign now\n` +
-                    `${prefix}status <text>       – Update your status text\n` +
-                    `${prefix}statusnow           – Post next scheduled status\n` +
-                    `${prefix}groups              – List groups bot is in\n` +
-                    `${prefix}contacts            – Count your contacts\n` +
-                    `${prefix}help                – Show this help`
+                await sendReply(sock, msg,
+                    `*WhatsApp Marketing Bot – Commands*\n\n` +
+                    `${prefix}blast <msg>     – Blast to all groups\n` +
+                    `${prefix}blastnow        – Run scheduled broadcast now\n` +
+                    `${prefix}dm <num> <msg>  – Send a DM to any number\n` +
+                    `${prefix}dmnow           – Run DM campaign now\n` +
+                    `${prefix}status <text>   – Update your status text\n` +
+                    `${prefix}statusnow       – Post next scheduled status\n` +
+                    `${prefix}groups          – List all your groups\n` +
+                    `${prefix}help            – Show this help`
                 );
                 break;
             }
 
-            default:
-                // Unknown admin command – fall through to auto-reply
-                break;
+            default: break;
         }
         return;
     }
 
     // ─── AUTO-REPLY ───────────────────────────────────────────────────────────
     if (!config.autoReply.enabled) return;
-    if (config.autoReply.dmOnly && msg.from.endsWith('@g.us')) return;
-    if (msg.fromMe) return;
+    if (config.autoReply.dmOnly && isGroup(msg)) return;
 
     const lower = body.toLowerCase();
     for (const rule of config.autoReply.rules) {
         if (lower.includes(rule.keyword.toLowerCase())) {
-            await msg.reply(rule.reply);
-            logger.log(`Auto-reply triggered: keyword="${rule.keyword}" to ${msg.from}`);
+            await sendReply(sock, msg, rule.reply);
+            logger.log(`Auto-reply: keyword="${rule.keyword}" to ${getSender(msg)}`);
             break;
         }
     }
 }
 
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+async function getGroups(sock) {
+    const cfg = config.groupBroadcast;
+    const groups = await sock.groupFetchAllParticipating();
+    const jids = Object.keys(groups);
+    if (!cfg.targetGroups.length) return jids;
+    return jids.filter(jid => {
+        const name = groups[jid].subject || '';
+        return cfg.targetGroups.some(t => name.toLowerCase().includes(t.toLowerCase()));
+    });
 }
 
 module.exports = { handle };
