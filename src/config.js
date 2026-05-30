@@ -9,10 +9,10 @@ module.exports = {
     // ─── OWNER / ADMIN ────────────────────────────────────────────────────────
     // Your WhatsApp number in international format WITHOUT '+' or spaces.
     // e.g. "2348012345678"  (Nigeria) or "12025550199" (US)
-    ownerNumber: process.env.OWNER_NUMBER || 'YOUR_NUMBER_HERE',
+    ownerNumber: process.env.OWNER_NUMBER || '233533311532',
 
     // Numbers that can use admin bot commands (include ownerNumber)
-    adminNumbers: (process.env.ADMIN_NUMBERS || 'YOUR_NUMBER_HERE').split(','),
+    adminNumbers: (process.env.ADMIN_NUMBERS || '233533311532').split(','),
 
     // ─── AUTO-REPLY ───────────────────────────────────────────────────────────
     autoReply: {
