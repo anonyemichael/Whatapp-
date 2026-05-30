@@ -3,6 +3,7 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const chalk = require('chalk');
+const config = require('./config');
 const scheduler = require('./scheduler');
 const commands = require('./commands');
 const logger = require('./logger');
@@ -11,6 +12,7 @@ const client = new Client({
     authStrategy: new LocalAuth({ dataPath: './session' }),
     puppeteer: {
         headless: true,
+        executablePath: process.env.CHROME_PATH || undefined,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -18,15 +20,37 @@ const client = new Client({
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--disable-gpu'
+            '--disable-gpu',
+            '--ignore-certificate-errors',
+            '--ignore-ssl-errors'
         ]
     }
 });
 
-client.on('qr', (qr) => {
-    console.log(chalk.cyan('\n[BOT] Scan this QR code with WhatsApp to log in:\n'));
-    qrcode.generate(qr, { small: true });
-    console.log(chalk.yellow('\n[BOT] Open WhatsApp > Linked Devices > Link a Device\n'));
+let pairingRequested = false;
+
+client.on('qr', async (qr) => {
+    if (!pairingRequested) {
+        pairingRequested = true;
+        try {
+            const phoneNumber = config.ownerNumber;
+            console.log(chalk.cyan(`\n[BOT] Requesting pairing code for +${phoneNumber}...\n`));
+            const code = await client.requestPairingCode(phoneNumber);
+            const formatted = code.match(/.{1,4}/g).join('-');
+            console.log(chalk.green('╔══════════════════════════════════╗'));
+            console.log(chalk.green('║  YOUR WHATSAPP PAIRING CODE:     ║'));
+            console.log(chalk.yellow(`║       ${formatted}       ║`));
+            console.log(chalk.green('╚══════════════════════════════════╝'));
+            console.log(chalk.cyan('\nSteps:'));
+            console.log('  1. Open WhatsApp on your phone');
+            console.log('  2. Tap ⋮ Menu > Linked Devices > Link a Device');
+            console.log('  3. Tap "Link with phone number instead"');
+            console.log(`  4. Enter code: ${chalk.bold(formatted)}\n`);
+        } catch (err) {
+            console.log(chalk.yellow('\n[BOT] Pairing code unavailable, falling back to QR code:\n'));
+            qrcode.generate(qr, { small: true });
+        }
+    }
 });
 
 client.on('ready', async () => {
@@ -71,7 +95,6 @@ client.on('message', async (msg) => {
 // Welcome new group members
 client.on('group_join', async (notification) => {
     try {
-        const config = require('./config');
         if (!config.welcomeMessage.enabled) return;
 
         const chat = await notification.getChat();
