@@ -6,11 +6,11 @@ const {
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
-    isJidGroup,
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const readline = require('readline');
 const fs = require('fs-extra');
+const http = require('http');
+const QRCode = require('qrcode');
 const chalk = require('chalk');
 const config = require('./config');
 const scheduler = require('./scheduler');
@@ -19,12 +19,68 @@ const api = require('./api');
 const logger = require('./logger');
 
 const SESSION_DIR = './session';
+const QR_PORT = 8080;
 
-async function askQuestion(q) {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    return new Promise(resolve => rl.question(q, ans => { rl.close(); resolve(ans.trim()); }));
+let qrServer = null;
+let latestQR = null;
+
+// ─── QR WEB SERVER ────────────────────────────────────────────────────────────
+function startQRServer() {
+    if (qrServer) return;
+    qrServer = http.createServer(async (req, res) => {
+        if (!latestQR) {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end('<html><body style="background:#111;color:#fff;font-family:sans-serif;text-align:center;padding:40px"><h2>Waiting for QR code...</h2><script>setTimeout(()=>location.reload(),3000)</script></body></html>');
+            return;
+        }
+        try {
+            const qrDataURL = await QRCode.toDataURL(latestQR, { width: 300, margin: 2 });
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(`<!DOCTYPE html>
+<html>
+<head>
+  <title>StayHub Bot - Scan QR</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { background:#111; color:#fff; font-family:sans-serif; text-align:center; padding:20px; }
+    img { border-radius:12px; max-width:280px; width:90vw; }
+    h2 { color:#25D366; }
+    p { color:#aaa; font-size:14px; }
+    .code { color:#FFD700; font-size:20px; font-weight:bold; letter-spacing:2px; }
+  </style>
+</head>
+<body>
+  <h2>StayHub WhatsApp Bot</h2>
+  <p>Scan this QR code with WhatsApp to link the bot</p>
+  <img src="${qrDataURL}" alt="QR Code"/>
+  <p style="margin-top:16px">Steps:<br>
+    1. Open <b>WhatsApp</b><br>
+    2. Tap <b>⋮ → Linked Devices → Link a Device</b><br>
+    3. Point camera at this QR code
+  </p>
+  <p style="color:#ff6b6b">⚠ Page auto-refreshes every 25 seconds for a new code</p>
+  <script>setTimeout(()=>location.reload(), 25000)</script>
+</body>
+</html>`);
+        } catch (e) {
+            res.writeHead(500);
+            res.end('Error generating QR');
+        }
+    });
+    qrServer.listen(QR_PORT, () => {
+        console.log(chalk.green(`\n╔═══════════════════════════════════════════╗`));
+        console.log(chalk.green(`║  QR CODE READY — open in your browser:   ║`));
+        console.log(chalk.bold.yellow(`║       http://localhost:${QR_PORT}              ║`));
+        console.log(chalk.green(`╚═══════════════════════════════════════════╝`));
+        console.log(chalk.cyan('\nThen tap ⋮ → Linked Devices → Link a Device and scan.\n'));
+    });
 }
 
+function stopQRServer() {
+    if (qrServer) { qrServer.close(); qrServer = null; }
+}
+
+// ─── MAIN CONNECTION ──────────────────────────────────────────────────────────
 async function connectToWhatsApp() {
     await fs.ensureDir(SESSION_DIR);
     const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
@@ -36,52 +92,34 @@ async function connectToWhatsApp() {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
         },
-        printQRInTerminal: false,
+        printQRInTerminal: true,
         logger: pino({ level: 'silent' }),
-        browser: ['Marketing Bot', 'Chrome', '120.0.0'],
+        browser: ['Ubuntu', 'Chrome', '120.0.0'],
         generateHighQualityLinkPreview: false,
         syncFullHistory: false,
     });
 
-    // ─── PAIRING CODE ─────────────────────────────────────────────────────────
-    if (!sock.authState.creds.registered) {
-        const phone = config.ownerNumber;
-        console.log(chalk.cyan(`\n[BOT] Requesting pairing code for +${phone}...\n`));
-        await new Promise(r => setTimeout(r, 3000));
-        try {
-            const code = await sock.requestPairingCode(phone);
-            const formatted = code.match(/.{1,4}/g).join('-');
-            console.log(chalk.green('\n╔══════════════════════════════════╗'));
-            console.log(chalk.green('║   YOUR WHATSAPP PAIRING CODE:    ║'));
-            console.log(chalk.bold.yellow(`║         ${formatted}          ║`));
-            console.log(chalk.green('╚══════════════════════════════════╝\n'));
-            console.log(chalk.cyan('Steps:'));
-            console.log('  1. Open WhatsApp on your phone');
-            console.log('  2. Tap ⋮ > Linked Devices > Link a Device');
-            console.log('  3. Tap "Link with phone number instead"');
-            console.log(`  4. Enter code: ${chalk.bold.yellow(formatted)}`);
-            console.log(chalk.yellow('\n  ⚠ You have ~60 seconds — enter it quickly!\n'));
-        } catch (err) {
-            console.error(chalk.red('[BOT] Could not get pairing code:'), err.message);
-            console.log(chalk.yellow('[BOT] Retrying in 10 seconds...'));
-            await new Promise(r => setTimeout(r, 10000));
-            return connectToWhatsApp();
-        }
-    }
-
     // ─── CONNECTION EVENTS ────────────────────────────────────────────────────
-    sock.ev.on('connection.update', async ({ connection, lastDisconnect }) => {
+    sock.ev.on('connection.update', async ({ qr, connection, lastDisconnect }) => {
+        if (qr) {
+            latestQR = qr;
+            startQRServer();
+        }
+
         if (connection === 'close') {
+            stopQRServer();
             const code = lastDisconnect?.error?.output?.statusCode;
             const shouldReconnect = code !== DisconnectReason.loggedOut;
             logger.log(`Disconnected (code ${code}). Reconnecting: ${shouldReconnect}`);
             if (shouldReconnect) {
                 setTimeout(connectToWhatsApp, 5000);
             } else {
-                console.log(chalk.red('[BOT] Logged out. Delete ./session folder and restart.'));
+                console.log(chalk.red('\n[BOT] Logged out. Delete the ./session folder and restart.'));
                 process.exit(0);
             }
         } else if (connection === 'open') {
+            stopQRServer();
+            latestQR = null;
             console.log(chalk.green('\n[BOT] WhatsApp Marketing Bot is READY!\n'));
             logger.log('Bot connected successfully');
             scheduler.init(sock);
@@ -98,20 +136,15 @@ async function connectToWhatsApp() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    // ─── MESSAGES ─────────────────────────────────────────────────────────────
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
         if (type !== 'notify') return;
         for (const msg of messages) {
             if (!msg.message) continue;
-            try {
-                await commands.handle(sock, msg);
-            } catch (err) {
-                logger.error('message handler', err);
-            }
+            try { await commands.handle(sock, msg); }
+            catch (err) { logger.error('message handler', err); }
         }
     });
 
-    // ─── GROUP MEMBER JOIN ────────────────────────────────────────────────────
     sock.ev.on('group-participants.update', async ({ id, participants, action }) => {
         if (action !== 'add' || !config.welcomeMessage.enabled) return;
         try {
@@ -122,9 +155,7 @@ async function connectToWhatsApp() {
                 await sock.sendMessage(id, { text });
                 logger.log(`Welcome sent to ${num} in ${meta.subject}`);
             }
-        } catch (err) {
-            logger.error('group join handler', err);
-        }
+        } catch (err) { logger.error('group join handler', err); }
     });
 
     return sock;
@@ -133,9 +164,8 @@ async function connectToWhatsApp() {
 process.on('unhandledRejection', (reason) => {
     const code = reason?.output?.statusCode || reason;
     if (code === 1006 || code === 428 || code === 503) {
-        // WebSocket/WhatsApp transient errors — reconnect
-        logger.log(`Transient error (${code}), reconnecting in 5s...`);
-        setTimeout(connectToWhatsApp, 5000);
+        logger.log(`Transient error (${code}), reconnecting in 8s...`);
+        setTimeout(connectToWhatsApp, 8000);
     } else {
         console.error(chalk.red('[BOT] Unhandled error:'), reason);
     }
