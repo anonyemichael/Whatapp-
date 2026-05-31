@@ -45,34 +45,27 @@ async function connectToWhatsApp() {
 
     // ─── PAIRING CODE ─────────────────────────────────────────────────────────
     if (!sock.authState.creds.registered) {
-        let phone = config.ownerNumber;
-
-        // Always ask for the number so it matches the actual WhatsApp account
-        console.log(chalk.cyan('\n[BOT] Enter the WhatsApp number to link (international format, no + or spaces)'));
-        console.log(chalk.yellow('      Example: 233533311532  (Ghana) | 2348012345678 (Nigeria)\n'));
-        const input = await askQuestion('Your WhatsApp number: ');
-        if (/^\d{7,15}$/.test(input)) {
-            phone = input;
-        } else {
-            console.log(chalk.yellow(`[BOT] Invalid input, using config number: ${phone}`));
-        }
-
+        const phone = config.ownerNumber;
+        console.log(chalk.cyan(`\n[BOT] Requesting pairing code for +${phone}...\n`));
         await new Promise(r => setTimeout(r, 3000));
         try {
             const code = await sock.requestPairingCode(phone);
             const formatted = code.match(/.{1,4}/g).join('-');
             console.log(chalk.green('\n╔══════════════════════════════════╗'));
             console.log(chalk.green('║   YOUR WHATSAPP PAIRING CODE:    ║'));
-            console.log(chalk.bold.yellow(`║          ${formatted}          ║`));
+            console.log(chalk.bold.yellow(`║         ${formatted}          ║`));
             console.log(chalk.green('╚══════════════════════════════════╝\n'));
-            console.log(chalk.cyan('How to link:'));
+            console.log(chalk.cyan('Steps:'));
             console.log('  1. Open WhatsApp on your phone');
-            console.log('  2. Tap the 3 dots (⋮) > Linked Devices > Link a Device');
+            console.log('  2. Tap ⋮ > Linked Devices > Link a Device');
             console.log('  3. Tap "Link with phone number instead"');
-            console.log(`  4. Enter code: ${chalk.bold.yellow(formatted)}\n`);
+            console.log(`  4. Enter code: ${chalk.bold.yellow(formatted)}`);
+            console.log(chalk.yellow('\n  ⚠ You have ~60 seconds — enter it quickly!\n'));
         } catch (err) {
             console.error(chalk.red('[BOT] Could not get pairing code:'), err.message);
-            process.exit(1);
+            console.log(chalk.yellow('[BOT] Retrying in 10 seconds...'));
+            await new Promise(r => setTimeout(r, 10000));
+            return connectToWhatsApp();
         }
     }
 
@@ -136,6 +129,17 @@ async function connectToWhatsApp() {
 
     return sock;
 }
+
+process.on('unhandledRejection', (reason) => {
+    const code = reason?.output?.statusCode || reason;
+    if (code === 1006 || code === 428 || code === 503) {
+        // WebSocket/WhatsApp transient errors — reconnect
+        logger.log(`Transient error (${code}), reconnecting in 5s...`);
+        setTimeout(connectToWhatsApp, 5000);
+    } else {
+        console.error(chalk.red('[BOT] Unhandled error:'), reason);
+    }
+});
 
 connectToWhatsApp().catch(err => {
     console.error(chalk.red('[BOT] Fatal error:'), err);
