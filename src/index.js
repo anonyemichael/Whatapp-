@@ -45,8 +45,18 @@ async function connectToWhatsApp() {
 
     // ─── PAIRING CODE ─────────────────────────────────────────────────────────
     if (!sock.authState.creds.registered) {
-        console.log(chalk.cyan('\n[BOT] No existing session found. Requesting pairing code...\n'));
-        const phone = config.ownerNumber;
+        let phone = config.ownerNumber;
+
+        // Always ask for the number so it matches the actual WhatsApp account
+        console.log(chalk.cyan('\n[BOT] Enter the WhatsApp number to link (international format, no + or spaces)'));
+        console.log(chalk.yellow('      Example: 233533311532  (Ghana) | 2348012345678 (Nigeria)\n'));
+        const input = await askQuestion('Your WhatsApp number: ');
+        if (/^\d{7,15}$/.test(input)) {
+            phone = input;
+        } else {
+            console.log(chalk.yellow(`[BOT] Invalid input, using config number: ${phone}`));
+        }
+
         await new Promise(r => setTimeout(r, 3000));
         try {
             const code = await sock.requestPairingCode(phone);
