@@ -15,6 +15,7 @@ const chalk = require('chalk');
 const config = require('./config');
 const scheduler = require('./scheduler');
 const commands = require('./commands');
+const api = require('./api');
 const logger = require('./logger');
 
 const SESSION_DIR = './session';
@@ -81,6 +82,7 @@ async function connectToWhatsApp() {
             console.log(chalk.green('\n[BOT] WhatsApp Marketing Bot is READY!\n'));
             logger.log('Bot connected successfully');
             scheduler.init(sock);
+            api.init(sock, process.env.API_PORT || 3000);
             console.log(chalk.blue('[BOT] Active features:'));
             console.log('  • Scheduled group broadcasts');
             console.log('  • Auto status updates');
