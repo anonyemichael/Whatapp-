@@ -6,6 +6,7 @@ const mime = require('mime-types');
 const config = require('./config');
 const scheduler = require('./scheduler');
 const logger = require('./logger');
+const { createMcpRouter } = require('../mcp/server');
 
 const app = express();
 app.use(express.json());
@@ -176,9 +177,14 @@ app.get('/autoreply', (req, res) => {
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 function init(sock, port = 3000) {
     _sock = sock;
+
+    // Mount MCP server at /mcp
+    app.use('/mcp', createMcpRouter(express));
+
     app.listen(port, () => {
-        console.log(`  [API] Bot REST API running on http://localhost:${port}`);
-        console.log(`  [API] MCP server: node mcp/server.js\n`);
+        console.log(`  [API] Bot REST API  → http://localhost:${port}`);
+        console.log(`  [API] MCP endpoint  → http://localhost:${port}/mcp`);
+        console.log(`  [API] Expose with:    cloudflared tunnel --url http://localhost:${port}\n`);
     });
 }
 
