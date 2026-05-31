@@ -39,10 +39,15 @@ async function sendReply(sock, msg, text) {
 }
 
 async function handle(sock, msg) {
-    if (msg.key.fromMe) return;
-
     const body = getBody(msg);
     if (!body) return;
+
+    const fromMe = msg.key.fromMe;
+    const admin = isAdmin(msg);
+
+    // Allow admin commands even when sent from self (messaging yourself)
+    // Block all other self-sent messages
+    if (fromMe && !(admin && body.startsWith(prefix))) return;
 
     // ─── ADMIN COMMANDS ───────────────────────────────────────────────────────
     if (body.startsWith(prefix) && isAdmin(msg)) {
