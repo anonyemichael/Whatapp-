@@ -17,7 +17,7 @@ module.exports = {
             },
             {
                 keyword: 'hello',
-                reply: `👋 Hey there! Welcome to *StayHub Ghana* 🏠\n\nFind verified student hostels near KNUST, UG, UENR & UDS — with video tours and secure escrow payments!\n\nReply *download* to get the app 📲`,
+                reply: `👋 Hey there! Welcome to *StayHub Ghana* 🏠\n\nFind verified student hostels near *UENR, UDS & CUG* — with video tours and secure escrow payments!\n\nReply *download* to get the app 📲`,
             },
             {
                 keyword: 'download',
@@ -33,27 +33,23 @@ module.exports = {
             },
             {
                 keyword: 'list',
-                reply: `🏠 *List Your Hostel on StayHub!*\n\nAre you a hostel owner or agent? Join 1000s of verified agents already on StayHub!\n\n✅ Get more students to see your rooms\n✅ Upload video tours to attract bookings\n✅ Get paid instantly when guests check in\n✅ Free to list!\n\n🌐 Register at: https://stayhubgh.com\nor reply *contact* to speak with us.`,
-            },
-            {
-                keyword: 'knust',
-                reply: `🎓 *Looking for a hostel near KNUST?*\n\nStayHub has verified hostels close to KNUST with video tours so you can see the room before booking!\n\n🔒 Escrow payment = no scams\n📲 Download: https://play.google.com/store/apps/details?id=com.stayhub.app`,
-            },
-            {
-                keyword: 'ug',
-                reply: `🎓 *Looking for a hostel near UG (Legon)?*\n\nStayHub has verified hostels near University of Ghana with real video tours!\n\n🔒 Pay safely with our escrow system\n📲 Download: https://play.google.com/store/apps/details?id=com.stayhub.app`,
+                reply: `🏠 *List Your Hostel on StayHub!*\n\nAre you a hostel owner or agent? Join verified agents already on StayHub!\n\n✅ Get more students to see your rooms\n✅ Upload video tours to attract bookings\n✅ Get paid instantly when guests check in\n✅ Free to list!\n\n🌐 Register at: https://stayhubgh.com\nor reply *contact* to speak with us.`,
             },
             {
                 keyword: 'uenr',
-                reply: `🎓 *Hostel near UENR?*\n\nFind verified, affordable hostels near UENR on StayHub — watch video tours & book safely!\n\n📲 Download: https://play.google.com/store/apps/details?id=com.stayhub.app`,
+                reply: `🎓 *Looking for a hostel near UENR?*\n\nStayHub has verified hostels near the University of Energy and Natural Resources in Sunyani!\n\n🎥 Watch video tours before you pay\n🔒 Escrow payment = no scams\n\n📲 Download FREE: https://play.google.com/store/apps/details?id=com.stayhub.app`,
             },
             {
                 keyword: 'uds',
-                reply: `🎓 *Hostel near UDS?*\n\nStayHub has verified hostels near University for Development Studies! Watch video tours before you pay.\n\n🔒 Escrow payment protects your money\n📲 Download: https://play.google.com/store/apps/details?id=com.stayhub.app`,
+                reply: `🎓 *Looking for a hostel near UDS?*\n\nStayHub has verified hostels near the University for Development Studies!\n\n🎥 Watch video tours before you pay\n🔒 Your money is safe with our escrow system\n\n📲 Download FREE: https://play.google.com/store/apps/details?id=com.stayhub.app`,
+            },
+            {
+                keyword: 'cug',
+                reply: `🎓 *Looking for a hostel near CUG?*\n\nStayHub has verified hostels near Catholic University College of Ghana!\n\n🎥 Watch video tours before you pay\n🔒 Escrow payment = your money is safe\n\n📲 Download FREE: https://play.google.com/store/apps/details?id=com.stayhub.app`,
             },
             {
                 keyword: 'price',
-                reply: `💰 *StayHub is FREE to use!*\n\nDownload the app free and browse hundreds of verified hostels near your school.\n\n📲 https://play.google.com/store/apps/details?id=com.stayhub.app\n\nHostel prices vary by school and location — search the app to compare!`,
+                reply: `💰 *StayHub is FREE to use!*\n\nDownload the app free and browse verified hostels near UENR, UDS & CUG.\n\n📲 https://play.google.com/store/apps/details?id=com.stayhub.app\n\nHostel prices vary by school and location — search the app to compare!`,
             },
             {
                 keyword: 'scam',
@@ -69,7 +65,7 @@ module.exports = {
             },
             {
                 keyword: 'hostel',
-                reply: `🏠 *Find Your Perfect Hostel with StayHub!*\n\n✅ Verified hostels near KNUST, UG, UENR & UDS\n✅ Watch video tours before booking\n✅ Pay safely with escrow\n✅ No scams, no stress!\n\n📲 Download FREE: https://play.google.com/store/apps/details?id=com.stayhub.app`,
+                reply: `🏠 *Find Your Perfect Hostel with StayHub!*\n\n✅ Verified hostels near UENR, UDS & CUG\n🎥 Watch video tours before booking\n🔒 Pay safely with escrow\n✅ No scams, no stress!\n\n📲 Download FREE: https://play.google.com/store/apps/details?id=com.stayhub.app`,
             },
             {
                 keyword: 'book',
@@ -83,13 +79,13 @@ module.exports = {
         enabled: true,
         schedule: '0 8 * * *',
         messages: [
-            '🏠 Find verified student hostels near KNUST, UG, UENR & UDS!\n\nDownload StayHub Ghana – #1 hostel booking app 📲\nhttps://stayhubgh.com',
+            '🏠 Find verified student hostels near UENR, UDS & CUG!\n\nDownload StayHub Ghana – #1 hostel booking app 📲\nhttps://stayhubgh.com',
             '🔒 Tired of hostel scams in Ghana?\n\nStayHub protects your money with ESCROW payments!\nPay only when you check in ✅\n\nDownload FREE 👉 https://stayhubgh.com',
             '🎥 See your hostel BEFORE you pay!\n\nStayHub has video tours for every listing 📹\nNo surprises. No scams. Just great hostels!\n\n📲 Download: https://stayhubgh.com',
-            '🎓 New semester? Find your hostel stress-free!\n\nStayHub – Ghana\'s #1 verified student hostel app\n✅ Near KNUST, UG, UENR & UDS\n\n📲 https://stayhubgh.com',
+            '🎓 New semester? Find your hostel stress-free!\n\nStayHub – Ghana\'s #1 verified student hostel app\n✅ Near UENR, UDS & CUG\n\n📲 https://stayhubgh.com',
             '🏠 Hostel owners & agents!\n\nList your property on StayHub and get MORE bookings from students 📈\n\n✅ Free to list\n✅ Video tours\n✅ Instant payments when guests check in\n\n🌐 https://stayhubgh.com',
             '💰 Student housing shouldn\'t cost you your peace of mind!\n\nStayHub = verified hostels + escrow payments + video tours\n\nDownload FREE 📲 https://stayhubgh.com',
-            '📲 Over 1000s of students trust StayHub Ghana for safe hostel bookings!\n\nJoin them today 👇\nhttps://stayhubgh.com',
+            '📲 Students at UENR, UDS & CUG – stop stressing about accommodation!\n\nStayHub Ghana has you covered 🏠\nhttps://stayhubgh.com',
         ],
         imagePath: '',
         videoPath: '',
@@ -102,17 +98,17 @@ module.exports = {
         schedule: '0 10 * * *',
         targetGroups: [],
         messages: [
-            `🏠 *STAYHUB GHANA* 🏠\n\nLooking for a hostel near *KNUST, UG, UENR or UDS?*\n\n✅ Verified hostels\n🎥 Video tours – see before you pay\n🔒 Escrow payment – no scams\n📲 FREE to download!\n\n👉 https://stayhubgh.com\n👉 Play Store: https://play.google.com/store/apps/details?id=com.stayhub.app`,
+            `🏠 *STAYHUB GHANA* 🏠\n\nLooking for a hostel near *UENR, UDS or CUG?*\n\n✅ Verified hostels\n🎥 Video tours – see before you pay\n🔒 Escrow payment – no scams\n📲 FREE to download!\n\n👉 https://stayhubgh.com\n👉 Play Store: https://play.google.com/store/apps/details?id=com.stayhub.app`,
 
             `🔒 *NO MORE HOSTEL SCAMS!* 🔒\n\nStayHub Ghana protects every student with our *Escrow Payment System:*\n\n1️⃣ Book your hostel on the app\n2️⃣ Pay securely into escrow\n3️⃣ Check in & confirm\n4️⃣ Agent gets paid ONLY then!\n\nYour money is ALWAYS safe 💪\n\n📲 Download FREE: https://stayhubgh.com`,
 
-            `🎥 *SEE YOUR ROOM BEFORE YOU PAY!* 🎥\n\nStayHub Ghana has *video tours* for every hostel listing!\n\nWatch the room, bathroom, kitchen & compound from your phone – no surprises when you arrive 😎\n\n✅ Near KNUST, UG, UENR & UDS\n🔒 Safe escrow payments\n\n📲 https://play.google.com/store/apps/details?id=com.stayhub.app`,
+            `🎥 *SEE YOUR ROOM BEFORE YOU PAY!* 🎥\n\nStayHub Ghana has *video tours* for every hostel listing!\n\nWatch the room, bathroom, kitchen & compound from your phone – no surprises when you arrive 😎\n\n✅ Near UENR, UDS & CUG\n🔒 Safe escrow payments\n\n📲 https://play.google.com/store/apps/details?id=com.stayhub.app`,
 
-            `🎓 *ATTENTION STUDENTS!* 🎓\n\nNew semester is coming – don't stress about accommodation!\n\nStayHub Ghana has HUNDREDS of verified hostels near your school 🏠\n\n✅ Video tours\n✅ Verified agents\n✅ Safe escrow payment\n✅ FREE app\n\n📲 Download now: https://stayhubgh.com`,
+            `🎓 *ATTENTION STUDENTS!* 🎓\n\nNew semester is coming – don't stress about accommodation!\n\nStayHub Ghana has verified hostels near your school 🏠\n\n✅ Video tours\n✅ Verified agents\n✅ Safe escrow payment\n✅ FREE app\n\n📲 Download now: https://stayhubgh.com`,
 
-            `🏠 *HOSTEL OWNERS & AGENTS!*\n\nList your property on *StayHub Ghana* and reach thousands of students looking for hostels!\n\n✅ Free to list\n✅ Upload video tours\n✅ Get paid instantly when guests check in\n✅ Verified badge builds trust\n\n🌐 Register at: https://stayhubgh.com`,
+            `🏠 *HOSTEL OWNERS & AGENTS!*\n\nList your property on *StayHub Ghana* and reach students at UENR, UDS & CUG looking for hostels!\n\n✅ Free to list\n✅ Upload video tours\n✅ Get paid instantly when guests check in\n✅ Verified badge builds trust\n\n🌐 Register at: https://stayhubgh.com`,
 
-            `📲 *STAYHUB – Ghana's #1 Student Hostel App*\n\nJoining thousands of students who book safely every semester!\n\n🎯 Find hostels near:\n• KNUST (Kumasi)\n• UG (Legon)\n• UENR (Sunyani)\n• UDS (Tamale)\n\n🔒 Escrow payments\n🎥 Video tours\n✅ Verified listings\n\nDownload FREE 👉 https://stayhubgh.com`,
+            `📲 *STAYHUB – Ghana's #1 Student Hostel App*\n\nBook safely every semester!\n\n🎯 Find hostels near:\n• UENR (Sunyani)\n• UDS (Tamale/Wa)\n• CUG (Fiapre)\n\n🔒 Escrow payments\n🎥 Video tours\n✅ Verified listings\n\nDownload FREE 👉 https://stayhubgh.com`,
         ],
         delayMs: 3000,
         imagePath: '',
@@ -125,11 +121,11 @@ module.exports = {
         schedule: '0 9 * * 1',
         contacts: [],
         messages: [
-            `👋 Hi {name}!\n\nLooking for student accommodation near your school in Ghana?\n\n🏠 *StayHub Ghana* has you covered!\n✅ Verified hostels near KNUST, UG, UENR & UDS\n🎥 Video tours before you pay\n🔒 Escrow payment – zero scam risk\n\n📲 Download FREE: https://play.google.com/store/apps/details?id=com.stayhub.app`,
+            `👋 Hi {name}!\n\nLooking for student accommodation near UENR, UDS or CUG?\n\n🏠 *StayHub Ghana* has you covered!\n✅ Verified hostels\n🎥 Video tours before you pay\n🔒 Escrow payment – zero scam risk\n\n📲 Download FREE: https://play.google.com/store/apps/details?id=com.stayhub.app`,
 
             `Hey {name}! 👋\n\nNew semester coming up? Don't struggle with hostel hunting!\n\nDownload *StayHub Ghana* – Ghana's #1 verified student hostel booking app 🏠\n\n🔒 Safe payments\n🎥 See rooms via video tour\n✅ Verified agents only\n\nhttps://stayhubgh.com`,
 
-            `Hi {name}! 🏠\n\nAre you a hostel owner or agent in Ghana?\n\nJoin *StayHub Ghana* and get more student bookings every semester!\n\n✅ Free to list your property\n✅ Upload video tours\n✅ Get paid instantly at check-in\n\n🌐 Register: https://stayhubgh.com`,
+            `Hi {name}! 🏠\n\nAre you a hostel owner or agent near UENR, UDS or CUG?\n\nJoin *StayHub Ghana* and get more student bookings every semester!\n\n✅ Free to list your property\n✅ Upload video tours\n✅ Get paid instantly at check-in\n\n🌐 Register: https://stayhubgh.com`,
         ],
         delayMs: 5000,
         imagePath: '',
@@ -139,7 +135,7 @@ module.exports = {
     // ─── WELCOME MESSAGE ──────────────────────────────────────────────────────
     welcomeMessage: {
         enabled: true,
-        text: `👋 Welcome *{name}*!\n\n🏠 This is the official *StayHub Ghana* community – Ghana's #1 verified student hostel booking app!\n\nNeed a hostel near KNUST, UG, UENR or UDS? We've got you covered 💪\n\n📲 Download the app FREE: https://stayhubgh.com\n\nFeel free to ask any questions!`,
+        text: `👋 Welcome *{name}*!\n\n🏠 This is the official *StayHub Ghana* community – Ghana's #1 verified student hostel booking app!\n\nWe cover hostels near *UENR, UDS & CUG* 🎓\n\n📲 Download the app FREE: https://stayhubgh.com\n\nFeel free to ask any questions!`,
     },
 
     // ─── COMMAND PREFIX ──────────────────────────────────────────────────────
