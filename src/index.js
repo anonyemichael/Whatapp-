@@ -137,12 +137,7 @@ async function connectToWhatsApp() {
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
-        console.log(`[DEBUG] messages.upsert type=${type} count=${messages.length}`);
-        for (const msg of messages) {
-            const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-            console.log(`[DEBUG] msg fromMe=${msg.key.fromMe} jid=${msg.key.remoteJid} body="${body}"`);
-        }
-        if (type !== 'notify') return;
+        if (type !== 'notify' && type !== 'append') return;
         for (const msg of messages) {
             if (!msg.message) continue;
             try { await commands.handle(sock, msg); }
